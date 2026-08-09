@@ -1,0 +1,15 @@
+# Секреты
+config.ini
+creds/
+.env
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Python
+__pycache__/
+*.pyc
+
+# Тесты
+test/
