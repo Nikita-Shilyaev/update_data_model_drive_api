@@ -36,6 +36,7 @@ from lib.drive_client import (
     update_file_bytes,
 )
 from lib.pipeline_state import read_last_updated, update_pipeline_state
+from lib.stores import normalize_stores
 
 CONFIG_PATH = PROJECT_DIR / "config.ini"
 
@@ -166,13 +167,7 @@ def transform_increment(raw):
     incr["дата"] = timestamp.dt.strftime("%Y-%m-%d %H:%M:%S")
     incr["date"] = timestamp.dt.strftime("%Y-%m-%d")
 
-    # в источнике у большинства названий магазина хвостовой пробел
-    incr["магазин"] = (
-        incr["магазин"]
-        .str.replace("Ювелирный салон ", "", regex=False)
-        .str.replace('"', "", regex=False)
-        .str.strip()
-    )
+    incr["магазин"] = normalize_stores(incr["магазин"], logger, SOURCE)
 
     # суммы держим дробными: в источнике есть копейки, округление построчно
     # уводит итог от контрольной суммы выгрузки
@@ -265,6 +260,10 @@ def update_rassrochka(ds_run=None):
             ", ".join(missing_columns),
         )
         sys.exit(1)
+
+    # магазин приводим и у накопленных строк: старые написания исправляются
+    # на ближайшем прогоне (см. lib/stores.py)
+    target["магазин"] = normalize_stores(target["магазин"], logger, SOURCE + "/база")
 
     # 4. Присоединяем инкременты и снимаем дубликаты — свежая строка вытесняет старую
     combined = pd.concat([target, *increments], ignore_index=True)

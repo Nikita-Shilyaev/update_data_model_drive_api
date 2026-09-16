@@ -35,6 +35,7 @@ from lib.drive_client import (
     update_file_bytes,
 )
 from lib.pipeline_state import read_last_updated, update_pipeline_state
+from lib.stores import normalize_stores
 
 CONFIG_PATH = PROJECT_DIR / "config.ini"
 
@@ -183,11 +184,8 @@ def transform_increment(raw):
     incr["дата"] = incr["Чек.Дата"].dt.strftime("%Y-%m-%d %H:%M:%S")
     incr["date"] = incr["Чек.Дата"].dt.strftime("%Y-%m-%d")
 
-    incr["магазин"] = (
-        incr["Чек.Магазин.Наименование"]
-        .str.strip()
-        .str.replace("Ювелирный салон ", "", regex=False)
-        .str.replace('"', "", regex=False)
+    incr["магазин"] = normalize_stores(
+        incr["Чек.Магазин.Наименование"], logger, SOURCE
     )
 
     incr["штрихкод"] = incr["Номенклатура.БИТ Основной штрихкод"].astype("Int64").astype(str)
@@ -287,6 +285,10 @@ def update_sales_cheki(ds_run=None):
             ", ".join(missing_columns),
         )
         sys.exit(1)
+
+    # магазин приводим и у накопленных строк: старые написания исправляются
+    # на ближайшем прогоне (см. lib/stores.py)
+    target["магазин"] = normalize_stores(target["магазин"], logger, SOURCE + "/база")
 
     # 4. Присоединяем инкременты и снимаем дубликаты — свежая строка вытесняет старую
     combined = pd.concat([target, *increments], ignore_index=True)

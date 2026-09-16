@@ -43,6 +43,7 @@ from lib.drive_client import (
     update_file_bytes,
 )
 from lib.pipeline_state import read_last_updated, update_pipeline_state
+from lib.stores import normalize_stores
 
 CONFIG_PATH = PROJECT_DIR / "config.ini"
 
@@ -162,12 +163,7 @@ def transform_increment(raw):
     incr["дата"] = timestamp.dt.strftime("%Y-%m-%d %H:%M:%S")
     incr["date"] = timestamp.dt.strftime("%Y-%m-%d")
 
-    incr["магазин"] = (
-        incr["магазин"]
-        .str.replace("Ювелирный салон ", "", regex=False)
-        .str.replace('"', "", regex=False)
-        .str.strip()
-    )
+    incr["магазин"] = normalize_stores(incr["магазин"], logger, SOURCE)
 
     incr["оплата_сертификата"] = (
         "Оплата сертификата " + incr["номер"] + " от " + incr["дата"]
@@ -264,6 +260,10 @@ def update_oplata_sert(ds_run=None):
             ", ".join(missing_columns),
         )
         sys.exit(1)
+
+    # магазин приводим и у накопленных строк: старые написания исправляются
+    # на ближайшем прогоне (см. lib/stores.py)
+    target["магазин"] = normalize_stores(target["магазин"], logger, SOURCE + "/база")
 
     # 4. Заменяем в базе дни, покрытые инкрементами: суточная выгрузка — полный
     #    срез за свой день, натурального ключа строки в этом источнике нет
