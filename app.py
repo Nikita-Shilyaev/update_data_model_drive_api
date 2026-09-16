@@ -18,7 +18,6 @@ PIPELINE = [
     Source("cards", "raw/load_cards_increment.py", "processed/update_cards.py"),
     Source("sales_cheki", "raw/load_sales_cheki_increment.py", "processed/update_sales_cheki.py"),
     Source("sales_sku", "raw/load_sales_sku_increment.py", "processed/update_sales_sku.py"),
-    Source("vozvraty", "raw/load_vozvraty_increment.py", "processed/update_vozvraty.py"),
     Source("akzii", "raw/load_akzii_increment.py", "processed/update_akzii.py"),
     Source("oplata_sert", "raw/load_oplata_sert_increment.py", "processed/update_oplata_sert.py"),
     Source("rassrochka", "raw/load_rassrochka_increment.py", "processed/update_rassrochka.py"),

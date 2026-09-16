@@ -9,7 +9,7 @@
 Остатки — исключение: в модель загружаются только даты по понедельникам и на конец месяца.
 - **Google Sheets `Visits_2026`** — посещения магазинов.
 
-Итоговые данные хранятся на Google Drive в виде CSV, разделённых по бизнес-сущностям (клиенты, продажи по чекам, продажи по артикулам, возвраты, товары, посещения).
+Итоговые данные хранятся на Google Drive в виде CSV, разделённых по бизнес-сущностям (клиенты, продажи по чекам, продажи по артикулам, товары, посещения).
 
 
 ## Логика пайплайна
@@ -19,12 +19,12 @@
 
 ### Слой `raw`
 
-По одному скрипту на источник (`load_cards_increment.py`, `load_akzii_increment.py`, `load_oplata_sert_increment.py`, `load_rassrochka_increment.py`, `load_sales_cheki_increment.py`, `load_sales_sku_increment.py`, `load_vozvraty_increment.py`): скачивают zip-архив с FTP за каждую дату диапазона, распаковывают Excel в памяти и загружают на Google Drive. `load_ostatki_ftp.py` — отдельный скрипт для остатков (другая папка на FTP, другая периодичность — только понедельники и конец месяца).
+По одному скрипту на источник (`load_cards_increment.py`, `load_akzii_increment.py`, `load_oplata_sert_increment.py`, `load_rassrochka_increment.py`, `load_sales_cheki_increment.py`, `load_sales_sku_increment.py`): скачивают zip-архив с FTP за каждую дату диапазона, распаковывают Excel в памяти и загружают на Google Drive. `load_ostatki_ftp.py` — отдельный скрипт для остатков (другая папка на FTP, другая периодичность — только понедельники и конец месяца).
 
 
 ### Слой `processed`: сборка из FTP-инкрементов
 
-По одному скрипту на источник (`update_cards.py`, `update_sales_cheki.py`, `update_vozvraty.py`, `update_rassrochka.py`, `update_akzii.py`, `update_sales_sku.py`, `update_oplata_sert.py`, `update_ostatki.py`): читают инкременты за диапазон дат, приводят к схеме целевой таблицы, нормализуют справочники (магазины, категории, поставщики и т.д.) и вливают в итоговый CSV — либо добавлением с дедупом по ключу, либо заменой данных за затронутые даты (там, где надёжного ключа нет).
+По одному скрипту на источник (`update_cards.py`, `update_sales_cheki.py`, `update_rassrochka.py`, `update_akzii.py`, `update_sales_sku.py`, `update_oplata_sert.py`, `update_ostatki.py`): читают инкременты за диапазон дат, приводят к схеме целевой таблицы, нормализуют справочники (магазины, категории, поставщики и т.д.) и вливают в итоговый CSV — либо добавлением с дедупом по ключу, либо заменой данных за затронутые даты (там, где надёжного ключа нет).
 
 
 ### Слой `processed`: посещения из Google Sheets
@@ -52,12 +52,11 @@ Python, `pandas`, `google-api-python-client` + `google-auth-oauthlib` (Google Dr
 cards         ОБНОВЛЕНО       ОБНОВЛЕНО
 sales_cheki   ОБНОВЛЕНО       ОБНОВЛЕНО
 sales_sku     ОБНОВЛЕНО       ОБНОВЛЕНО
-vozvraty      ОБНОВЛЕНО       ОБНОВЛЕНО
 akzii         ОБНОВЛЕНО       ОБНОВЛЕНО
 oplata_sert   ОБНОВЛЕНО       ОБНОВЛЕНО
 rassrochka    ОБНОВЛЕНО       ОБНОВЛЕНО
 ostatki       БЕЗ ИЗМЕНЕНИЙ   БЕЗ ИЗМЕНЕНИЙ
 visits        —               ОБНОВЛЕНО
 ----------------------------------------------------
-Обновлено: 8 · Без изменений: 2 · Ошибок: 0 · Пропущено: 0
+Обновлено: 7 · Без изменений: 2 · Ошибок: 0 · Пропущено: 0
 ```
