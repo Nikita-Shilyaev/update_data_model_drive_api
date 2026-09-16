@@ -45,7 +45,7 @@ from lib.drive_client import (
     update_file_bytes,
 )
 from lib.pipeline_state import read_last_updated, update_pipeline_state
-from lib.stores import SKLAD_STORE_MAP, map_store_codes, normalize_stores
+from lib.stores import STORE_MAP
 from lib.weekly_increment import target_dates
 
 CONFIG_PATH = PROJECT_DIR / "config.ini"
@@ -110,7 +110,6 @@ TEXT_COLUMNS = [
     "цвет",
     "коллекция",
     "камень",
-    "склад",
     "поставщик",
 ]
 
@@ -376,13 +375,18 @@ def transform_increment(raw, label):
     # магазин строится по коду склада, а не по отдельному полю (в выгрузке
     # его больше нет). "ВС (...)" — обособленный склад, а не торговая точка:
     # такие строки останутся без магазина, потому что их кода нет в словаре
-    incr["магазин"] = map_store_codes(
-        incr["склад"],
-        SKLAD_STORE_MAP,
-        logger,
-        SOURCE,
-        ignore=incr["склад"].fillna("").str.upper().str.startswith("ВС"),
+    incr["магазин"] = incr["склад"].map(STORE_MAP)
+
+    unmapped = (
+        incr["склад"].notna()
+        & incr["магазин"].isna()
+        & ~incr["склад"].str.upper().str.startswith("ВС")
     )
+    if unmapped.any():
+        logger.warning(
+            "Неизвестные коды склада — магазин не определён: %s",
+            sorted(incr.loc[unmapped, "склад"].unique()),
+        )
 
     incr["категория"] = incr["категория"].replace(CATEGORY_MAP).map(upper_first)
     incr["коллекция"] = (
@@ -525,9 +529,9 @@ def update_ostatki(ds_run=None):
         )
         sys.exit(1)
 
-    # магазин приводим и у накопленных строк: в базе лежат уже названия, а не
-    # коды складов, поэтому нормализация текстовая (см. lib/stores.py)
-    target["магазин"] = normalize_stores(target["магазин"], logger, SOURCE + "/база")
+    # замену прогоняем и по накопленным строкам: старые написания
+    # исправляются на ближайшем прогоне (см. lib/stores.py)
+    target["магазин"] = target["магазин"].replace(STORE_MAP)
 
     # 3. Срезы обрабатываем по одному в хронологическом порядке: срез на конец
     #    месяца должен вытеснить понедельники этого месяца, в том числе

@@ -43,7 +43,7 @@ from lib.drive_client import (
     update_file_bytes,
 )
 from lib.pipeline_state import read_last_updated, update_pipeline_state
-from lib.stores import normalize_stores
+from lib.stores import STORE_MAP
 
 CONFIG_PATH = PROJECT_DIR / "config.ini"
 
@@ -154,7 +154,6 @@ def transform_increment(raw):
 
     incr = raw.rename(columns=COLUMN_RENAMES)
 
-    incr["магазин"] = incr["магазин"].astype(str).str.strip()
     incr["номер"] = incr["номер"].astype(str).str.strip()
 
     # dayfirst=True: эксель отдаёт ячейку и строкой "22.06.2026 16:50:44",
@@ -163,7 +162,7 @@ def transform_increment(raw):
     incr["дата"] = timestamp.dt.strftime("%Y-%m-%d %H:%M:%S")
     incr["date"] = timestamp.dt.strftime("%Y-%m-%d")
 
-    incr["магазин"] = normalize_stores(incr["магазин"], logger, SOURCE)
+    incr["магазин"] = incr["магазин"].replace(STORE_MAP)
 
     incr["оплата_сертификата"] = (
         "Оплата сертификата " + incr["номер"] + " от " + incr["дата"]
@@ -263,7 +262,7 @@ def update_oplata_sert(ds_run=None):
 
     # магазин приводим и у накопленных строк: старые написания исправляются
     # на ближайшем прогоне (см. lib/stores.py)
-    target["магазин"] = normalize_stores(target["магазин"], logger, SOURCE + "/база")
+    target["магазин"] = target["магазин"].replace(STORE_MAP)
 
     # 4. Заменяем в базе дни, покрытые инкрементами: суточная выгрузка — полный
     #    срез за свой день, натурального ключа строки в этом источнике нет

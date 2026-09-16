@@ -32,7 +32,7 @@ from lib.drive_client import (
     update_file_bytes,
 )
 from lib.pipeline_state import read_last_updated, update_pipeline_state
-from lib.stores import normalize_stores
+from lib.stores import STORE_MAP
 
 CONFIG_PATH = PROJECT_DIR / "config.ini"
 
@@ -135,7 +135,7 @@ def transform_increment(raw):
 
     incr = raw.rename(columns=COLUMN_RENAMES).copy()
 
-    for column in ["номер_акции", "название_акции", "скидка", "для_всех_магазинов", "магазин"]:
+    for column in ["номер_акции", "название_акции", "скидка", "для_всех_магазинов"]:
         incr[column] = incr[column].astype(str).str.strip()
 
     # dayfirst=True: эксель отдаёт ячейку и строкой "01.02.2026 12:11:28",
@@ -149,7 +149,7 @@ def transform_increment(raw):
             incr[column], dayfirst=True, errors="coerce"
         ).dt.strftime("%Y-%m-%d")
 
-    incr["магазин"] = normalize_stores(incr["магазин"], logger, SOURCE)
+    incr["магазин"] = incr["магазин"].replace(STORE_MAP)
 
     return incr[TARGET_COLUMNS]
 
@@ -237,7 +237,7 @@ def update_akzii(ds_run=None):
     # магазин приводим и у накопленных строк: старые написания исправляются
     # на ближайшем прогоне (см. lib/stores.py). Для акций это ещё и схлопывает
     # дубли: магазин входит в ключ дедупа
-    target["магазин"] = normalize_stores(target["магазин"], logger, SOURCE + "/база")
+    target["магазин"] = target["магазин"].replace(STORE_MAP)
 
     # 4. Присоединяем инкременты и снимаем дубликаты — свежий снимок вытесняет старый
     combined = pd.concat([target, *increments], ignore_index=True)

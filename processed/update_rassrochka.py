@@ -36,7 +36,7 @@ from lib.drive_client import (
     update_file_bytes,
 )
 from lib.pipeline_state import read_last_updated, update_pipeline_state
-from lib.stores import normalize_stores
+from lib.stores import STORE_MAP
 
 CONFIG_PATH = PROJECT_DIR / "config.ini"
 
@@ -158,7 +158,7 @@ def transform_increment(raw):
     if incr.empty:
         return pd.DataFrame(columns=TARGET_COLUMNS)
 
-    for column in ["вид_оплаты", "терминал", "чек", "магазин"]:
+    for column in ["вид_оплаты", "терминал", "чек"]:
         incr[column] = incr[column].astype(str).str.strip()
 
     # dayfirst=True: эксель отдаёт ячейку и строкой "22.06.2026 17:08:41",
@@ -167,7 +167,7 @@ def transform_increment(raw):
     incr["дата"] = timestamp.dt.strftime("%Y-%m-%d %H:%M:%S")
     incr["date"] = timestamp.dt.strftime("%Y-%m-%d")
 
-    incr["магазин"] = normalize_stores(incr["магазин"], logger, SOURCE)
+    incr["магазин"] = incr["магазин"].replace(STORE_MAP)
 
     # суммы держим дробными: в источнике есть копейки, округление построчно
     # уводит итог от контрольной суммы выгрузки
@@ -263,7 +263,7 @@ def update_rassrochka(ds_run=None):
 
     # магазин приводим и у накопленных строк: старые написания исправляются
     # на ближайшем прогоне (см. lib/stores.py)
-    target["магазин"] = normalize_stores(target["магазин"], logger, SOURCE + "/база")
+    target["магазин"] = target["магазин"].replace(STORE_MAP)
 
     # 4. Присоединяем инкременты и снимаем дубликаты — свежая строка вытесняет старую
     combined = pd.concat([target, *increments], ignore_index=True)

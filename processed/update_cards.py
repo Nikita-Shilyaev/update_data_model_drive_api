@@ -44,7 +44,7 @@ from lib.drive_client import (
 )
 from lib.gsheet_client import read_sheet_as_dataframe
 from lib.pipeline_state import read_last_updated, update_pipeline_state
-from lib.stores import CARD_GROUP_MAP, map_store_codes, normalize_stores
+from lib.stores import STORE_MAP
 
 CONFIG_PATH = PROJECT_DIR / "config.ini"
 
@@ -243,11 +243,8 @@ def transform_increment(raw):
     ).dt.strftime("%Y-%m-%d")
 
     # пустой магазин остаётся пустым: подстановка точки по умолчанию
-    # приписывала ей чужие карты. Незнакомый код тоже даёт пусто, но с
-    # предупреждением в логе (см. lib/stores.py)
-    incr["магазин_открытия_карты"] = map_store_codes(
-        incr["магазин_открытия_карты"], CARD_GROUP_MAP, logger, SOURCE
-    )
+    # приписывала ей чужие карты
+    incr["магазин_открытия_карты"] = incr["магазин_открытия_карты"].replace(STORE_MAP)
 
     # магазин первой покупки известен только из продаж; vip проставляется
     # по справочнику уже после объединения с базой
@@ -337,10 +334,10 @@ def update_cards(ds_run=None):
 
     target["дата_рождения"] = pd.to_datetime(target["дата_рождения"], errors="coerce")
 
-    # магазины приводим и у накопленных строк: в базе лежат уже названия, а не
-    # коды, поэтому нормализация текстовая (см. lib/stores.py)
+    # замену прогоняем и по накопленным строкам: старые написания
+    # исправляются на ближайшем прогоне (см. lib/stores.py)
     for column in ["магазин_открытия_карты", "магазин_первой_покупки"]:
-        target[column] = normalize_stores(target[column], logger, SOURCE + "/база")
+        target[column] = target[column].replace(STORE_MAP)
 
     # 4. Присоединяем инкременты и снимаем дубликаты по телефону — свежая по
     # дате открытия карты строка вытесняет старую (см. докстринг модуля)

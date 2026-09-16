@@ -42,7 +42,7 @@ from lib.drive_client import (
     update_file_bytes,
 )
 from lib.pipeline_state import read_last_updated, update_pipeline_state
-from lib.stores import normalize_stores
+from lib.stores import STORE_MAP
 
 CONFIG_PATH = PROJECT_DIR / "config.ini"
 
@@ -107,8 +107,9 @@ TARGET_COLUMNS = [
     "сумма_со_скидкой",
 ]
 
+# "магазин" сюда не входит: он заменяется по справочнику STORE_MAP,
+# ключи которого совпадают со значением из выгрузки как есть
 TEXT_COLUMNS = [
-    "магазин",
     "продавец",
     "артикул",
     "номенклатура",
@@ -393,7 +394,7 @@ def transform_increment(raw):
 
     incr["штрихкод"] = incr["штрихкод"].astype("Int64").astype(str)
 
-    incr["магазин"] = normalize_stores(incr["магазин"], logger, SOURCE)
+    incr["магазин"] = incr["магазин"].replace(STORE_MAP)
 
     incr["категория"] = incr["категория"].replace(CATEGORY_MAP).map(upper_first)
 
@@ -527,7 +528,7 @@ def update_sales_sku(ds_run=None):
 
     # магазин приводим и у накопленных строк: старые написания исправляются
     # на ближайшем прогоне (см. lib/stores.py)
-    target["магазин"] = normalize_stores(target["магазин"], logger, SOURCE + "/база")
+    target["магазин"] = target["магазин"].replace(STORE_MAP)
 
     # 4. Заменяем в базе дни, покрытые инкрементами: суточная выгрузка — полный
     #    срез за свой день, натурального ключа строки в этом источнике нет
