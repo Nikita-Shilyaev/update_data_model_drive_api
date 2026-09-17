@@ -284,10 +284,6 @@ def update_sales_cheki(ds_run=None):
         )
         sys.exit(1)
 
-    # магазин приводим и у накопленных строк: старые написания исправляются
-    # на ближайшем прогоне (см. lib/stores.py)
-    target["магазин"] = target["магазин"].replace(STORE_MAP)
-
     # 4. Присоединяем инкременты и снимаем дубликаты — свежая строка вытесняет старую
     combined = pd.concat([target, *increments], ignore_index=True)
 
